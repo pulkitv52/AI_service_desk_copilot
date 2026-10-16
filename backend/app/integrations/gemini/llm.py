@@ -1,3 +1,4 @@
+import json
 from typing import Any, Optional, Protocol, runtime_checkable
 import httpx
 
@@ -26,6 +27,18 @@ class MockLLMProvider:
     async def generate(
         self, prompt: str, system_instruction: Optional[str] = None
     ) -> str:
+        if system_instruction and "RAG_RESPONSE_JSON" in system_instruction:
+            evidence = json.loads(prompt)["evidence"]
+            selected = next(
+                (c for c in evidence if "Resolution Steps" in c["content"]), evidence[0]
+            )
+            return json.dumps(
+                {
+                    "answerable": True,
+                    "answer": selected["content"] + f"\n[{selected['source_id']}]",
+                    "source_ids": [selected["source_id"]],
+                }
+            )
         # Extract user request part if structured prompt
         text_to_check = prompt
         for marker in ["Employee Request:\n", "User Support Request:\n"]:
@@ -81,8 +94,8 @@ class GeminiLLMProvider:
     def __init__(
         self,
         api_key: str,
-        model: str = "gemini-2.5-flash",
-        backup_model: str = "gemini-3.1-flash-lite-preview",
+        model: str = "gemini-3.5-flash-lite",
+        backup_model: str | None = None,
         timeout_seconds: float = 20.0,
         client: Optional[httpx.AsyncClient] = None,
     ) -> None:
@@ -109,6 +122,8 @@ class GeminiLLMProvider:
 
         contents: list[dict[str, Any]] = [{"role": "user", "parts": [{"text": prompt}]}]
         payload: dict[str, Any] = {"contents": contents}
+        if system_instruction and "RAG_RESPONSE_JSON" in system_instruction:
+            payload["generationConfig"] = {"responseMimeType": "application/json"}
 
         if system_instruction:
             payload["systemInstruction"] = {"parts": [{"text": system_instruction}]}
@@ -119,36 +134,41 @@ class GeminiLLMProvider:
 
         try:
             for model_name in models_to_try:
-                url = f"{self.base_url}/models/{model_name}:generateContent?key={self.api_key}"
+                url = f"{self.base_url}/models/{model_name}:generateContent"
                 # Retry transient errors up to 2 times per model
                 for attempt in range(2):
                     try:
-                        response = await client.post(url, json=payload)
+                        response = await client.post(
+                            url, json=payload, headers={"x-goog-api-key": self.api_key}
+                        )
                         if response.status_code in (429, 500, 502, 503, 504):
+                            last_error = RuntimeError("Gemini temporarily unavailable")
                             logger.warning(
                                 "Transient Gemini error HTTP %s on model %s (attempt %d/2). Retrying...",
                                 response.status_code,
                                 model_name,
                                 attempt + 1,
                             )
-                            await asyncio.sleep(0.75 * (attempt + 1))
+                            if attempt == 0:
+                                await asyncio.sleep(0.75)
                             continue
 
                         response.raise_for_status()
                         data = response.json()
                         candidates = data.get("candidates", [])
                         if not candidates:
-                            return "I was unable to generate an answer for this request."
+                            raise ValueError("Gemini returned no answer")
                         parts = candidates[0].get("content", {}).get("parts", [])
                         text_result = "".join(part.get("text", "") for part in parts)
+                        if not text_result.strip():
+                            raise ValueError("Gemini returned an empty answer")
                         return text_result.strip()
 
                     except (httpx.TimeoutException, httpx.NetworkError) as exc:
                         logger.warning(
-                            "Network/timeout error on model %s (attempt %d/2): %s",
+                            "Network/timeout error on model %s (attempt %d/2)",
                             model_name,
                             attempt + 1,
-                            exc,
                         )
                         last_error = exc
                         await asyncio.sleep(0.75 * (attempt + 1))
@@ -161,8 +181,8 @@ class GeminiLLMProvider:
                         break
 
             if last_error:
-                logger.error("All Gemini LLM models exhausted. Last error: %s", last_error)
-                raise RuntimeError(f"Gemini API error: {last_error}") from last_error
+                logger.error("Gemini generation unavailable")
+                raise RuntimeError("Gemini generation unavailable") from None
 
             return "I was unable to process this request at this time."
         finally:

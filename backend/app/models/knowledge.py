@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any, Optional
 from pgvector.sqlalchemy import Vector
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, StrictBool
 from sqlalchemy import (
     Column,
     DateTime,
@@ -114,7 +114,16 @@ class GroundedAnswerRequest(BaseModel):
 
     query: str = Field(..., min_length=2, max_length=1000)
     category: Optional[str] = None
-    similarity_threshold: float = Field(default=0.60, ge=0.0, le=1.0)
+    similarity_threshold: float = Field(default=0.60, ge=0.60, le=1.0)
+
+
+class GroundedGeneration(BaseModel):
+    """Untrusted model output; action/tool fields are deliberately unsupported."""
+
+    model_config = ConfigDict(extra="forbid")
+    answerable: StrictBool
+    answer: str = Field(max_length=12000)
+    source_ids: list[str] = Field(max_length=4)
 
 
 class GroundedAnswer(BaseModel):
@@ -126,3 +135,5 @@ class GroundedAnswer(BaseModel):
     sources: list[str] = Field(default_factory=list)
     should_escalate: bool = False
     matched_chunks: list[KnowledgeSearchResult] = Field(default_factory=list)
+    selected_chunk_ids: list[str] = Field(default_factory=list)
+    fallback_reason: str | None = None

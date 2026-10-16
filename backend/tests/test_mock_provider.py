@@ -75,3 +75,24 @@ async def test_mock_query_incidents() -> None:
     results = await provider.query_incidents("SAP")
     assert len(results) == 1
     assert "SAP" in results[0].short_description
+
+
+@pytest.mark.asyncio
+async def test_priority_recalculated_when_impact_or_urgency_changes() -> None:
+    provider = MockTicketingProvider()
+    created = await provider.create_incident(
+        TicketCreateRequest(short_description="VPN issue")
+    )
+    assert created.priority == "P5"
+    updated = await provider.update_incident(
+        created.sys_id, TicketUpdateRequest(urgency=TicketUrgency.HIGH)
+    )
+    assert updated.priority == "P3"
+    updated = await provider.update_incident(
+        created.sys_id, TicketUpdateRequest(impact=TicketImpact.HIGH)
+    )
+    assert updated.priority == "P1"
+    updated = await provider.update_incident(
+        created.sys_id, TicketUpdateRequest(state=TicketState.IN_PROGRESS)
+    )
+    assert updated.priority == "P1"

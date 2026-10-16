@@ -5,7 +5,7 @@ export type SupportIntent =
   | 'diagnostic_remediation'
   | 'general_incident'
 
-export type TicketPriority = 'P1' | 'P2' | 'P3' | 'P4'
+export type TicketPriority = 'P1' | 'P2' | 'P3' | 'P4' | 'P5'
 
 export interface IntentClassification {
   intent: SupportIntent
@@ -43,6 +43,10 @@ export type ChatResponseType =
   | 'ticket_created'
   | 'service_request'
   | 'diagnostic_action'
+  | 'escalation_offered'
+  | 'conversational'
+  | 'pending_verification'
+  | 'ticket_failed'
 
 export interface ChatResponse {
   session_id: string
@@ -91,4 +95,22 @@ export interface RemediationResultResponse {
   output: string
   resolved: boolean
   executed_at: string
+}
+
+export interface ConversationSummary {
+  id: string
+  issue: string
+  updated_at: string
+}
+
+export interface ConversationDetail extends ConversationSummary {
+  incident_status?: string
+  ticket?: TicketResponse
+  messages: {
+    id: number
+    role: 'user' | 'assistant'
+    content: string
+    created_at: string
+    response?: ChatResponse
+  }[]
 }

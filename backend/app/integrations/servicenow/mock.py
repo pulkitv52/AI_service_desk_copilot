@@ -7,6 +7,8 @@ from app.models.ticket import (
     TicketUpdateRequest,
     TicketResponse,
     TicketState,
+    TicketImpact,
+    TicketUrgency,
 )
 
 logger = get_logger("mock_ticketing_provider")
@@ -18,9 +20,12 @@ class MockTicketingProvider:
     def __init__(self) -> None:
         self._tickets: dict[str, TicketResponse] = {}
         self._next_inc_num: int = 10001
+        self._correlations: dict[str, str] = {}
 
     async def create_incident(self, ticket: TicketCreateRequest) -> TicketResponse:
         """Create a mock incident."""
+        if ticket.correlation_id in self._correlations:
+            return self._tickets[self._correlations[ticket.correlation_id]]
         sys_id = uuid.uuid4().hex
         number = f"INC{self._next_inc_num}"
         self._next_inc_num += 1
@@ -34,7 +39,7 @@ class MockTicketingProvider:
             state=TicketState.NEW.value,
             urgency=ticket.urgency.value,
             impact=ticket.impact.value,
-            priority="P3",
+            priority=self._priority(ticket.impact, ticket.urgency),
             category=ticket.category,
             subcategory=ticket.subcategory,
             assignment_group=ticket.assignment_group,
@@ -44,6 +49,8 @@ class MockTicketingProvider:
             updated_at=now_str,
         )
         self._tickets[sys_id] = response
+        if ticket.correlation_id:
+            self._correlations[ticket.correlation_id] = sys_id
         logger.info(
             "Created mock incident number=%s sys_id=%s short_description=%s",
             number,
@@ -80,6 +87,9 @@ class MockTicketingProvider:
         if update.assignment_group is not None:
             update_data["assignment_group"] = update.assignment_group
 
+        update_data["priority"] = self._priority(
+            TicketImpact(update_data["impact"]), TicketUrgency(update_data["urgency"])
+        )
         update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
         updated_ticket = TicketResponse(**update_data)
         self._tickets[existing.sys_id] = updated_ticket
@@ -104,3 +114,15 @@ class MockTicketingProvider:
             if len(results) >= limit:
                 break
         return results
+
+    @staticmethod
+    def _priority(impact: TicketImpact, urgency: TicketUrgency) -> str:
+        from app.services.routing_service import RoutingService
+
+        return RoutingService.calculate_priority(impact, urgency).value
+
+    async def find_incident_by_correlation(
+        self, correlation_id: str
+    ) -> Optional[TicketResponse]:
+        sys_id = self._correlations.get(correlation_id)
+        return self._tickets.get(sys_id) if sys_id else None

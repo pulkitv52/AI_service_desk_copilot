@@ -73,6 +73,7 @@ class KnowledgeRepository:
         query_vector: list[float],
         limit: int = 5,
         category: Optional[str] = None,
+        embedding_profile: str | None = None,
     ) -> list[KnowledgeSearchResult]:
         """Retrieve most similar chunks using pgvector cosine distance."""
         distance_col = KnowledgeChunk.embedding.cosine_distance(query_vector)
@@ -90,6 +91,11 @@ class KnowledgeRepository:
 
         if category:
             stmt = stmt.where(KnowledgeDocument.category == category)
+        if embedding_profile:
+            stmt = stmt.where(
+                KnowledgeDocument.doc_metadata["embedding_profile"].as_string()
+                == embedding_profile
+            )
 
         rows = await self.session.execute(stmt)
         results: list[KnowledgeSearchResult] = []

@@ -37,7 +37,7 @@ export const RecentTicketsList: React.FC<RecentTicketsListProps> = ({ tickets })
             <div className="flex items-center justify-between gap-1 mb-1">
               <span className="font-mono font-bold text-white tracking-wide">{t.number}</span>
               <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 font-medium">
-                {t.priority || 'P3'}
+                {t.priority || 'Unspecified'}
               </span>
             </div>
             <p className="text-slate-300 line-clamp-1 mb-1 font-medium">{t.short_description}</p>

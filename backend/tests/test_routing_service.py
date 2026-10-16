@@ -1,37 +1,29 @@
+import pytest
+
 from app.models.chat import SupportIntent, TicketPriority
 from app.models.ticket import TicketImpact, TicketUrgency
 from app.services.routing_service import RoutingService
 
 
-def test_priority_matrix() -> None:
-    # Critical P1
-    assert (
-        RoutingService.calculate_priority(TicketImpact.HIGH, TicketUrgency.HIGH)
-        == TicketPriority.P1
-    )
-    # High P2
-    assert (
-        RoutingService.calculate_priority(TicketImpact.HIGH, TicketUrgency.MEDIUM)
-        == TicketPriority.P2
-    )
-    assert (
-        RoutingService.calculate_priority(TicketImpact.MEDIUM, TicketUrgency.HIGH)
-        == TicketPriority.P2
-    )
-    # Medium P3
-    assert (
-        RoutingService.calculate_priority(TicketImpact.MEDIUM, TicketUrgency.MEDIUM)
-        == TicketPriority.P3
-    )
-    assert (
-        RoutingService.calculate_priority(TicketImpact.LOW, TicketUrgency.HIGH)
-        == TicketPriority.P3
-    )
-    # Low P4
-    assert (
-        RoutingService.calculate_priority(TicketImpact.LOW, TicketUrgency.LOW)
-        == TicketPriority.P4
-    )
+# Verified against all nine rows of the PDI Priority Data Lookup table.
+@pytest.mark.parametrize(
+    "impact,urgency,priority",
+    [
+        ("1", "1", "P1"),
+        ("1", "2", "P2"),
+        ("1", "3", "P3"),
+        ("2", "1", "P2"),
+        ("2", "2", "P3"),
+        ("2", "3", "P4"),
+        ("3", "1", "P3"),
+        ("3", "2", "P4"),
+        ("3", "3", "P5"),
+    ],
+)
+def test_priority_matrix(impact: str, urgency: str, priority: str) -> None:
+    assert RoutingService.calculate_priority(
+        TicketImpact(impact), TicketUrgency(urgency)
+    ) == TicketPriority(priority)
 
 
 def test_assignment_groups() -> None:

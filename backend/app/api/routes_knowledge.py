@@ -42,13 +42,13 @@ async def ingest_knowledge(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(exc),
-        ) from exc
+        ) from None
     except Exception as exc:
-        logger.exception("Failed to ingest knowledge: %s", exc)
+        logger.error("External workflow failed")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Knowledge ingestion failed: {exc}",
-        ) from exc
+            detail="Knowledge ingestion failed",
+        ) from None
 
 
 @router.post(
@@ -69,11 +69,11 @@ async def search_knowledge(
             category=request.category,
         )
     except Exception as exc:
-        logger.exception("Failed to search knowledge: %s", exc)
+        logger.error("External workflow failed")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Knowledge search failed: {exc}",
-        ) from exc
+            detail="Knowledge search failed",
+        ) from None
 
 
 @router.post(
@@ -94,8 +94,8 @@ async def answer_question(
             category=request.category,
         )
     except Exception as exc:
-        logger.exception("Failed to generate grounded answer: %s", exc)
+        logger.error("External workflow failed")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to generate answer: {exc}",
-        ) from exc
+            detail="Failed to generate answer",
+        ) from None

@@ -1,4 +1,8 @@
+import uuid
 from typing import Optional
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.core.database import get_db_session
+from app.services.incident_service import IncidentService
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.core.logging import get_logger
@@ -26,10 +30,32 @@ router = APIRouter(prefix="/api/tickets", tags=["Tickets"])
 async def create_ticket(
     ticket: TicketCreateRequest,
     provider: TicketingProvider = Depends(get_ticketing_provider),
+    session: AsyncSession = Depends(get_db_session),
 ) -> TicketResponse:
     """Create a new incident ticket in the configured ITSM provider."""
     try:
-        return await provider.create_incident(ticket)
+        ticket = ticket.model_copy(
+            update={"correlation_id": ticket.correlation_id or uuid.uuid4().hex}
+        )
+        result, created = await IncidentService(session, provider).create_or_reconcile(
+            ticket
+        )
+        if result != "created":
+            raise HTTPException(
+                409 if result == "pending" else 502,
+                {
+                    "status": result,
+                    "correlation_id": ticket.correlation_id,
+                    "message": (
+                        "Incident pending verification"
+                        if result == "pending"
+                        else "Incident request rejected"
+                    ),
+                },
+            )
+        return created
+    except HTTPException:
+        raise
     except ServiceNowError as exc:
         raise HTTPException(
             status_code=exc.status_code or status.HTTP_502_BAD_GATEWAY,

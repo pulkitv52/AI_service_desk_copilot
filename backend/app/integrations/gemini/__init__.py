@@ -27,7 +27,9 @@ def get_embedding_provider() -> EmbeddingProvider:
     if cfg.gemini_api_key:
         logger.info("Initializing live GeminiEmbeddingProvider")
         _singleton_embedding_provider = GeminiEmbeddingProvider(
-            api_key=cfg.gemini_api_key
+            api_key=cfg.gemini_api_key,
+            model=cfg.gemini_embedding_model,
+            dimension=cfg.gemini_embedding_dimension,
         )
     else:
         logger.info("Gemini API key not configured; using MockEmbeddingProvider")
@@ -51,7 +53,9 @@ def get_llm_provider() -> LLMProvider:
     cfg = get_settings()
     if cfg.gemini_api_key:
         logger.info("Initializing live GeminiLLMProvider")
-        _singleton_llm_provider = GeminiLLMProvider(api_key=cfg.gemini_api_key)
+        _singleton_llm_provider = GeminiLLMProvider(
+            api_key=cfg.gemini_api_key, model=cfg.gemini_llm_model
+        )
     else:
         logger.info("Gemini API key not configured; using MockLLMProvider")
         _singleton_llm_provider = MockLLMProvider()

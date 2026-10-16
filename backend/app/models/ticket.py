@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Optional
+from typing import Literal, Optional
 from pydantic import BaseModel, Field
 
 
@@ -36,7 +36,9 @@ class TicketCreateRequest(BaseModel):
     subcategory: Optional[str] = None
     assignment_group: Optional[str] = None
     caller_id: Optional[str] = None
-    correlation_id: Optional[str] = None
+    correlation_id: Optional[str] = Field(
+        default=None, pattern=r"^[a-zA-Z0-9_-]{1,128}$"
+    )
 
 
 class TicketUpdateRequest(BaseModel):
@@ -60,7 +62,7 @@ class TicketResponse(BaseModel):
     state: str = TicketState.NEW.value
     urgency: str = TicketUrgency.LOW.value
     impact: str = TicketImpact.LOW.value
-    priority: Optional[str] = "P3"
+    priority: Optional[str] = None
     category: Optional[str] = None
     subcategory: Optional[str] = None
     assignment_group: Optional[str] = None
@@ -70,3 +72,8 @@ class TicketResponse(BaseModel):
         default_factory=lambda: datetime.now(timezone.utc).isoformat()
     )
     updated_at: Optional[str] = None
+
+
+class IncidentStatusResponse(BaseModel):
+    status: Literal["ready", "pending", "failed", "created"]
+    ticket: TicketResponse | None = None

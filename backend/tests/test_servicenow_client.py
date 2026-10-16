@@ -23,7 +23,7 @@ def mock_servicenow_transport() -> httpx.MockTransport:
                 201,
                 json={
                     "result": {
-                        "sys_id": "abc123sysid",
+                        "sys_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                         "number": "INC0010001",
                         "short_description": "Cannot connect to VPN",
                         "description": "Details here",
@@ -41,13 +41,13 @@ def mock_servicenow_transport() -> httpx.MockTransport:
         if (
             request.method == "GET"
             and url_str
-            == "https://dev12345.service-now.com/api/now/table/incident/abc123sysid"
+            == "https://dev12345.service-now.com/api/now/table/incident/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
         ):
             return httpx.Response(
                 200,
                 json={
                     "result": {
-                        "sys_id": "abc123sysid",
+                        "sys_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                         "number": "INC0010001",
                         "short_description": "Cannot connect to VPN",
                         "state": "1",
@@ -64,13 +64,13 @@ def mock_servicenow_transport() -> httpx.MockTransport:
         if (
             request.method == "PATCH"
             and url_str
-            == "https://dev12345.service-now.com/api/now/table/incident/abc123sysid"
+            == "https://dev12345.service-now.com/api/now/table/incident/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
         ):
             return httpx.Response(
                 200,
                 json={
                     "result": {
-                        "sys_id": "abc123sysid",
+                        "sys_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                         "number": "INC0010001",
                         "short_description": "Cannot connect to VPN",
                         "state": "2",
@@ -97,6 +97,9 @@ async def test_servicenow_provider_create_incident(
         username="admin",
         password="secretpassword",
         client=client,
+        caller_sys_id="bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        group_ids={"Network Support": "cccccccccccccccccccccccccccccccc"},
+        fallback_group_sys_id="cccccccccccccccccccccccccccccccc",
     )
 
     ticket_req = TicketCreateRequest(
@@ -108,7 +111,7 @@ async def test_servicenow_provider_create_incident(
     )
     response = await provider.create_incident(ticket_req)
 
-    assert response.sys_id == "abc123sysid"
+    assert response.sys_id == "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
     assert response.number == "INC0010001"
     assert response.short_description == "Cannot connect to VPN"
     assert response.assignment_group == "Network Support"
@@ -127,9 +130,12 @@ async def test_servicenow_provider_get_incident(
         username="admin",
         password="secretpassword",
         client=client,
+        caller_sys_id="bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        group_ids={"Network Support": "cccccccccccccccccccccccccccccccc"},
+        fallback_group_sys_id="cccccccccccccccccccccccccccccccc",
     )
 
-    incident = await provider.get_incident("abc123sysid")
+    incident = await provider.get_incident("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
     assert incident is not None
     assert incident.number == "INC0010001"
 
@@ -149,10 +155,14 @@ async def test_servicenow_provider_update_incident(
         username="admin",
         password="secretpassword",
         client=client,
+        caller_sys_id="bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        group_ids={"Network Support": "cccccccccccccccccccccccccccccccc"},
+        fallback_group_sys_id="cccccccccccccccccccccccccccccccc",
     )
 
     updated = await provider.update_incident(
-        "abc123sysid", TicketUpdateRequest(state=TicketState.IN_PROGRESS)
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        TicketUpdateRequest(state=TicketState.IN_PROGRESS),
     )
     assert updated is not None
     assert updated.state == "2"

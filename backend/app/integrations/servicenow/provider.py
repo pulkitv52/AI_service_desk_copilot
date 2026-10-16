@@ -25,3 +25,9 @@ class TicketingProvider(Protocol):
     ) -> list[TicketResponse]:
         """Query incidents using provider query syntax or filter."""
         ...
+
+    async def find_incident_by_correlation(
+        self, correlation_id: str
+    ) -> Optional[TicketResponse]:
+        """Find an accepted creation attempt without sending another POST."""
+        ...

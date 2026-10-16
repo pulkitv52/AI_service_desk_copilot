@@ -26,6 +26,9 @@ def get_ticketing_provider() -> TicketingProvider:
             username=cfg.servicenow_username or "",
             password=cfg.servicenow_password or "",
             timeout_seconds=cfg.servicenow_timeout_seconds,
+            caller_sys_id=cfg.servicenow_caller_sys_id,
+            group_ids=cfg.servicenow_group_ids,
+            fallback_group_sys_id=cfg.servicenow_fallback_group_sys_id,
         )
     else:
         logger.info(

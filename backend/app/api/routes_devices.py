@@ -68,10 +68,10 @@ async def remediate_device(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exc),
-        ) from exc
+        ) from None
     except Exception as exc:
-        logger.exception("Remediation execution failed: %s", exc)
+        logger.error("External workflow failed")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Remediation action failed: {exc}",
-        ) from exc
+            detail="Remediation action failed",
+        ) from None

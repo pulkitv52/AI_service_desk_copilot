@@ -19,6 +19,7 @@ class TicketPriority(str, Enum):
     P2 = "P2"
     P3 = "P3"
     P4 = "P4"
+    P5 = "P5"
 
 
 class IntentClassification(BaseModel):
@@ -30,7 +31,7 @@ class IntentClassification(BaseModel):
     application: Optional[str] = None
     urgency: TicketUrgency = TicketUrgency.LOW
     impact: TicketImpact = TicketImpact.LOW
-    priority: TicketPriority = TicketPriority.P3
+    priority: TicketPriority = TicketPriority.P5
     assignment_group: str
     confidence: float = Field(ge=0.0, le=1.0)
     reasoning: Optional[str] = None
@@ -40,8 +41,8 @@ class ChatRequest(BaseModel):
     """User incoming chat message payload."""
 
     message: str = Field(..., min_length=2, max_length=2000)
-    session_id: Optional[str] = None
-    user_id: Optional[str] = "EMP-1049"
+    session_id: Optional[str] = Field(default=None, pattern=r"^[a-f0-9]{32}$")
+    user_id: Optional[str] = None
     force_ticket: bool = False
 
 
@@ -50,6 +51,10 @@ class ChatResponseType(str, Enum):
     TICKET_CREATED = "ticket_created"
     SERVICE_REQUEST = "service_request"
     DIAGNOSTIC_ACTION = "diagnostic_action"
+    ESCALATION_OFFERED = "escalation_offered"
+    CONVERSATIONAL = "conversational"
+    PENDING_VERIFICATION = "pending_verification"
+    TICKET_FAILED = "ticket_failed"
 
 
 class ChatResponse(BaseModel):

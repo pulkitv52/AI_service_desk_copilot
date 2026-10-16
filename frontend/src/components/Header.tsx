@@ -29,14 +29,14 @@ export const Header: React.FC<HeaderProps> = ({ servicenowActive, onQuickPrompt 
                 <Sparkles className="w-3 h-3" /> Zero-L1
               </span>
             </div>
-            <p className="text-xs text-slate-400">Enterprise Support Orchestrator with RAG & Automated Self-Healing</p>
+            <p className="text-xs text-slate-400">Enterprise Support Orchestrator with RAG & Simulated Device Tools</p>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg bg-surfaceLight border border-border text-slate-300">
             <Database className="w-3.5 h-3.5 text-emerald-400" />
-            <span>pgvector: <strong className="text-emerald-400">Connected</strong></span>
+            <span>Knowledge store: <strong>PostgreSQL</strong></span>
           </div>
           <div className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg bg-surfaceLight border border-border text-slate-300">
             <Shield className="w-3.5 h-3.5 text-cyan-400" />

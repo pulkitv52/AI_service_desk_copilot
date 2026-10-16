@@ -1,5 +1,6 @@
 from functools import lru_cache
 from typing import Optional
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -22,6 +23,11 @@ class Settings(BaseSettings):
 
     # Gemini
     gemini_api_key: Optional[str] = None
+    gemini_llm_model: str = "gemini-3.5-flash-lite"
+    gemini_embedding_model: str = "gemini-embedding-001"
+    # Existing migration stores vector(768); changing this requires a migration.
+    gemini_embedding_dimension: int = Field(default=768, ge=768, le=768)
+    rag_similarity_threshold: float = Field(default=0.60, ge=0.60, le=1.0)
 
     # ServiceNow
     servicenow_instance_url: Optional[str] = None
@@ -29,6 +35,9 @@ class Settings(BaseSettings):
     servicenow_password: Optional[str] = None
     servicenow_timeout_seconds: float = 10.0
     use_mock_servicenow: bool = False
+    servicenow_caller_sys_id: Optional[str] = None
+    servicenow_fallback_group_sys_id: Optional[str] = None
+    servicenow_group_ids: dict[str, str] = Field(default_factory=dict)
 
     # Database
     database_url: str = (

@@ -56,3 +56,60 @@ def test_get_llm_provider_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
     provider = get_llm_provider()
     assert isinstance(provider, MockLLMProvider)
     reset_llm_provider()
+
+
+async def test_rag_generation_uses_json_mode_and_agreed_model():
+    import json
+
+    def handler(request):
+        assert request.url.path.endswith(
+            "/models/gemini-3.5-flash-lite:generateContent"
+        )
+        body = json.loads(request.content)
+        assert body["generationConfig"]["responseMimeType"] == "application/json"
+        return httpx.Response(
+            200,
+            json={
+                "candidates": [
+                    {
+                        "content": {
+                            "parts": [
+                                {
+                                    "text": '{"answerable":false,"answer":"","source_ids":[]}'
+                                }
+                            ]
+                        }
+                    }
+                ]
+            },
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        result = await GeminiLLMProvider("test-key", client=client).generate(
+            "test", "RAG_RESPONSE_JSON"
+        )
+        assert json.loads(result)["answerable"] is False
+
+
+@pytest.mark.parametrize("status,expected_calls", [(401, 1), (429, 2), (503, 2)])
+async def test_provider_failures_do_not_return_success_or_silently_change_models(
+    status, expected_calls, monkeypatch
+):
+    from unittest.mock import AsyncMock
+
+    monkeypatch.setattr("asyncio.sleep", AsyncMock())
+    calls = []
+
+    def handler(request):
+        calls.append(request.url.path)
+        return httpx.Response(
+            status, json={"error": {"message": "secret-provider-detail"}}
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        with pytest.raises(RuntimeError, match="Gemini generation unavailable"):
+            await GeminiLLMProvider("test-key", client=client).generate("test")
+    assert (
+        calls
+        == ["/v1beta/models/gemini-3.5-flash-lite:generateContent"] * expected_calls
+    )

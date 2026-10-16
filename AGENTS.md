@@ -1530,3 +1530,20 @@ The goal is to build a **credible enterprise support automation platform** that 
 - platform engineering discipline
 
 Build small, validate, measure, then expand.
+
+## Agent skills
+
+### Issue tracker
+
+Track issues and specs in GitHub Issues.
+See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Use the five default triage labels.
+See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Use a single-context glossary and ADR layout.
+See `docs/agents/domain.md`.

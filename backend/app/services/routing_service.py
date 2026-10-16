@@ -7,9 +7,9 @@ logger = get_logger("routing_service")
 
 
 class RoutingService:
-    """Deterministic routing and ITIL priority calculation engine."""
+    """Deterministic routing and ServiceNow priority calculation engine."""
 
-    # ITIL standard priority matrix: (Impact, Urgency) -> Priority
+    # PDI Priority Data Lookup (dl_u_priority): (Impact, Urgency) -> Priority.
     PRIORITY_MATRIX: dict[tuple[str, str], TicketPriority] = {
         ("1", "1"): TicketPriority.P1,
         ("1", "2"): TicketPriority.P2,
@@ -19,7 +19,7 @@ class RoutingService:
         ("3", "1"): TicketPriority.P3,
         ("2", "3"): TicketPriority.P4,
         ("3", "2"): TicketPriority.P4,
-        ("3", "3"): TicketPriority.P4,
+        ("3", "3"): TicketPriority.P5,
     }
 
     ASSIGNMENT_RULES: list[tuple[set[str], str]] = [
@@ -83,9 +83,9 @@ class RoutingService:
     def calculate_priority(
         cls, impact: TicketImpact, urgency: TicketUrgency
     ) -> TicketPriority:
-        """Deterministically compute ITIL incident priority."""
+        """Compute priority using the verified PDI impact/urgency matrix."""
         key = (impact.value, urgency.value)
-        priority = cls.PRIORITY_MATRIX.get(key, TicketPriority.P3)
+        priority = cls.PRIORITY_MATRIX[key]
         logger.debug(
             "Priority computed impact=%s urgency=%s -> %s",
             impact.value,

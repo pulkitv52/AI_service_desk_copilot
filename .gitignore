@@ -23,7 +23,10 @@ wheels/
 .installed.cfg
 *.egg
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
 .coverage
+.coverage.*
 htmlcov/
 
 # Node / Frontend
@@ -35,6 +38,7 @@ dist-ssr/
 
 # Environment & Secrets
 .env
+.env.*
 *.env
 !.env.example
 
@@ -51,3 +55,21 @@ postgres_data/
 # OS
 .DS_Store
 Thumbs.db
+
+# Local service process state and logs
+.run/
+*.log
+
+# Local test databases and SQLite sidecars
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite3-journal
+*.sqlite3-wal
+*.sqlite3-shm
